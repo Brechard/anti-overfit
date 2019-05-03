@@ -7,10 +7,9 @@ import matplotlib.pyplot as plt
 import tensorflow as tf
 import numpy as np
 
-tf.enable_eager_execution()
+# tf.enable_eager_execution()
 
 train_data = scipy.io.loadmat('../Xtrain.mat')['Xtrain']
-train_data = [i[0] for i in train_data]
 
 
 def plot_train_data():
@@ -19,25 +18,26 @@ def plot_train_data():
     plt.show()
 
 
-#
+# Prepare the data for the network
 batch_size = 50
 steps_per_epoch = len(train_data) - batch_size
 
-# Model initialization
-model = tf.keras.models.Sequential()
-#model.add(tf.keras.layers.Embedding(input_dim=batch_size, output_dim=batch_size))
-model.add(tf.keras.layers.Dense(units=batch_size, input_shape=(batch_size,)))
-model.add(tf.keras.layers.GRU(1, return_sequences=True))
-model.compile(optimizer='adam', loss='mean_squared_error')
-
-# Training
-x_train = np.zeros((steps_per_epoch, batch_size))
+x_train = np.zeros((steps_per_epoch, batch_size, 1))
 y_train = np.zeros((steps_per_epoch, 1))
 for i in range(steps_per_epoch):
     x_train[i] = train_data[i: i + batch_size]
     y_train[i] = train_data[i + batch_size]
 
-model.fit(x_train, y_train, epochs=1)
-model.evaluate(x_train, y_train)
+print("Shape of x_train", x_train.shape)
+print("Shape of y_train", y_train.shape)
 
-# plot_train_data()
+# Model initialization
+model = tf.keras.models.Sequential()
+
+model.add(tf.keras.layers.Dense(units=30, input_shape=(batch_size, 1)))
+model.add(tf.keras.layers.LSTM(10))
+model.add(tf.keras.layers.Dense(1))
+
+model.compile(optimizer='adam', loss='mean_squared_error')
+
+model.fit(x_train, y_train, epochs=100, batch_size=1)
