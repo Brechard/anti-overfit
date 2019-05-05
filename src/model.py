@@ -96,6 +96,7 @@ class Model:
             plt.title(title)
             plt.legend()
             plt.show()
+            plt.savefig(title.lower().replace("= ", "").replace(". ", "_").replace(" ", "_"))
 
         return predictions
 
