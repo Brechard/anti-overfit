@@ -21,7 +21,7 @@ class Model:
         model.compile(optimizer='adam', loss='mse')
         self.model = model
 
-    def train_model(self, epochs=50, save_model_weights=True, train_batch_size=1):
+    def train_model(self, epochs=50, save_model_weights=True, train_batch_size=1, plot_loss=True):
         """
         Train the network and save the weights if indicated as input
         :param epochs: Number of epochs to train the network
@@ -34,6 +34,16 @@ class Model:
 
         if save_model_weights:
             self.save_model_weights()
+
+        if plot_loss:
+            plt.plot(train_output.history['loss'])
+            plt.title("Loss history in training")
+            plt.xlabel("Epoch")
+            plt.ylabel("Loss")
+            title = "loss_batch_size_" + str(self.batch_size) + "_nodes_" + str(self.nodes)
+            title += "_dropout_" + str(self.dropout) if self.dropout else ""
+            plt.savefig('../plots/' + title + ".png")
+            plt.show()
 
         return train_output
 
@@ -95,8 +105,8 @@ class Model:
             title += ". Dropout = " + str(self.dropout) if self.dropout else ""
             plt.title(title)
             plt.legend()
+            plt.savefig('../plots/' + title.lower().replace("= ", "").replace(". ", "_").replace(" ", "_"))
             plt.show()
-            plt.savefig(title.lower().replace("= ", "").replace(". ", "_").replace(" ", "_"))
 
         return predictions
 

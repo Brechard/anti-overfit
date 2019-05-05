@@ -66,12 +66,13 @@ def study_batches_and_net_dim(dropouts, batch_sizes, n_nodes_hidden_layers, epoc
 # study_batches_and_net_dim([0, 0.3, 0.5, 0.7], [10, 50, 100, 200, 400, 500], [2, 5, 10, 50, 100, 200, 400])
 batch_size = 100
 nodes = 10
-epochs = 100
+epochs = 1
+
 x_train, y_train = prepare_data(batch_size)
 model = Model(x_train, y_train, batch_size, nodes, dropout=0,
               extra_name="_nodes_" + str(nodes) + "_batch_" + str(batch_size))
-# model.train_model(epochs=epochs)
-model.load_model_weights()
+model.train_model(epochs=epochs)
+# model.load_model_weights()
 # predict_plot(epochs, 500)
 model.predict(original_data=train_data)
 
