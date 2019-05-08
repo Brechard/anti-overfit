@@ -6,6 +6,8 @@ import scipy.io
 import matplotlib.pyplot as plt
 import numpy as np
 from model import Model
+from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
+import math
 
 # tf.enable_eager_execution()
 
@@ -38,46 +40,38 @@ def study_batches_and_net_dim(dropouts, batch_sizes, n_nodes_hidden_layers, epoc
     for dropout in dropouts:
         for batch_size in batch_sizes:
             x_train, y_train = prepare_data(batch_size)
-
+            losses = {}
             for nodes in n_nodes_hidden_layers:
                 model = Model(x_train, y_train, batch_size, nodes, dropout=dropout,
                               extra_name="_nodes_" + str(nodes) + "_batch_" + str(batch_size))
                 output_train = model.train_model(epochs)
-                predictions = model.predict()
+                predictions = model.predict(1000, original_data=train_data)
 
-                print("Len of prediction", len(predictions))
-                print("Len of train data", len(train_data))
+                losses[str(nodes)] = output_train['loss']
 
-                plt.plot(train_data, label="Real data")
-                plt.plot([1000 + i for i in range(len(predictions))], predictions, label="Prediction")
-                title = "Batch size = " + str(batch_size) + ". Nodes = " + str(nodes) + ". Epochs = " + str(
-                    epochs) + ". Dropout = " + str(dropout)
-                plt.title(title)
-                plt.legend()
-                plt.show()
-
-                plt.plot(output_train.history['loss'])
-                plt.title("Loss history in training. " + title)
-                plt.xlabel("Epoch")
-                plt.ylabel("Loss")
-                plt.show()
+            for key, value in losses.items():
+                plt.plot(value, label=str(key) + " nodes")
+            plt.title("Loss history in training")
+            plt.xlabel("Epoch")
+            plt.ylabel("Loss")
+            plt.legend()
+            plt.show()
 
 
-# study_batches_and_net_dim([0, 0.3, 0.5, 0.7], [10, 50, 100, 200, 400, 500], [2, 5, 10, 50, 100, 200, 400])
-batch_size = 100
-nodes = 10
-epochs = 1
+def print_errors(test_data, predictions):
+    print("MSE =", mean_squared_error(test_data, predictions))
+    print("MAE =", mean_absolute_error(test_data, predictions))
+    print("r_2 =", r2_score(test_data, predictions))
+    print("RMSE =", math.sqrt(mean_squared_error(test_data, predictions)))
+
+
+batch_size = 450
+nodes = 100
+epochs = 100
 
 x_train, y_train = prepare_data(batch_size)
 model = Model(x_train, y_train, batch_size, nodes, dropout=0,
               extra_name="_nodes_" + str(nodes) + "_batch_" + str(batch_size))
-model.train_model(epochs=epochs)
+model.train_model(epochs=epochs, train_batch_size=16)
 # model.load_model_weights()
-# predict_plot(epochs, 500)
-model.predict(original_data=train_data)
-
-# model = Model(x_train, y_train, batch_size, nodes, dropout=0,
-#               extra_name="_nodes_" + str(nodes) + "_batch_" + str(batch_size))
-# model.train_model(epochs=epochs)
-#
-# predict_plot(epochs, 500)
+model.predict(200, original_data=train_data)

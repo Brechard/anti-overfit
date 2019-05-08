@@ -11,15 +11,26 @@ class Model:
         self.batch_size = batch_size
         self.nodes = n_nodes_hidden_layer
         self.dropout = dropout
-        self.json_str = '../models/' + json_str + extra_name + '_dropout_' + str(dropout) + '.json'
-        self.weight_str = '../models/' + weight_str + extra_name + '_dropout_' + str(dropout) + '.h5'
+        self.gpu = True
 
         # Model initialization
         model = tf.keras.models.Sequential()
-        model.add(tf.keras.layers.LSTM(self.nodes, dropout=dropout))
+        if tf.test.is_gpu_available():
+            model.add(tf.keras.layers.CuDNNLSTM(self.nodes))
+            model.add(tf.keras.layers.Dropout(rate=dropout))
+            print("Using GPU")
+        else:
+            self.gpu = False
+            model.add(tf.keras.layers.LSTM(self.nodes, dropout=dropout))
+            print("GPU not available")
         model.add(tf.keras.layers.Dense(1))
         model.compile(optimizer='adam', loss='mse')
         self.model = model
+
+        self.json_str = '../models/' + json_str + extra_name + '_dropout_' + str(dropout) + \
+                        ("_gpu" if self.gpu else "") + '.json'
+        self.weight_str = '../models/' + weight_str + extra_name + '_dropout_' + str(dropout) + \
+                          ("_gpu" if self.gpu else "") + '.h5'
 
     def train_model(self, epochs=50, save_model_weights=True, train_batch_size=1, plot_loss=True):
         """
@@ -42,6 +53,7 @@ class Model:
             plt.ylabel("Loss")
             title = "loss_batch_size_" + str(self.batch_size) + "_nodes_" + str(self.nodes)
             title += "_dropout_" + str(self.dropout) if self.dropout else ""
+            title += "_gpu" if self.gpu else ""
             plt.savefig('../plots/' + title + ".png")
             plt.show()
 
@@ -90,7 +102,7 @@ class Model:
         for i in range(predict_size):
             new_value = self.model.predict(input_data)
             # new_value += input_data[:, -1, :]
-            predictions.append(new_value[0][0])
+            predictions.append(new_value[0, 0])
 
             new_input_data = np.zeros(input_data.shape)
             new_input_data[0, :-1, :] = input_data[0, 1:, :]
@@ -103,6 +115,7 @@ class Model:
             plt.plot([1000 + i for i in range(len(predictions))], predictions, label="Prediction")
             title = "Batch size = " + str(self.batch_size) + ". Nodes = " + str(self.nodes)
             title += ". Dropout = " + str(self.dropout) if self.dropout else ""
+            title += "_gpu" if self.gpu else ""
             plt.title(title)
             plt.legend()
             plt.savefig('../plots/' + title.lower().replace("= ", "").replace(". ", "_").replace(" ", "_"))
